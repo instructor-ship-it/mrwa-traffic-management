@@ -1,0 +1,92 @@
+[
+  {
+    "url": "https://portal-mainroads.opendata.arcgis.com/datasets/a5931669bdc643e4848c3e428226a1be_2/about",
+    "name": "Culverts | Main Roads Open Data, Maps & Apps - ArcGIS Online",
+    "snippet": "This layer indicates the location of culverts managed and controlled by Main Roads Western Australia . A culvert is a drain or pipe that allows water to flow ... Read more\nThis layer indicates the location of culverts managed and controlled by Main Roads Western Australia. A culvert is a drain or pipe that allows water to flow ...",
+    "host_name": "portal-mainroads.opendata.arcgis.com",
+    "rank": 0,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://catalogue.data.wa.gov.au/dataset/mrwa-culverts",
+    "name": "Culverts - Datasets - data.wa.gov.au",
+    "snippet": "This layer indicates the location of culverts managed and controlled by Main Roads Western Australia . A culvert is a drain or pipe that allows water to flow ... Read more\nThis layer indicates the location of culverts managed and controlled by Main Roads Western Australia. A culvert is a drain or pipe that allows water to flow ...",
+    "host_name": "catalogue.data.wa.gov.au",
+    "rank": 1,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://portal-mainroads.opendata.arcgis.com/datasets/mainroads::culverts",
+    "name": "Culverts | Main Roads Open Data, Maps & Apps",
+    "snippet": "This layer indicates the location of culverts managed and controlled by Main Roads Western Australia ... This dataset has a lot of records, try zooming in. Read more",
+    "host_name": "portal-mainroads.opendata.arcgis.com",
+    "rank": 2,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://portal-mainroads.opendata.arcgis.com",
+    "name": "Main Roads Open Data, Maps & Apps",
+    "snippet": "This site makes Main Roads data and information discoverable and more broadly available, providing exciting opportunities to data users. Read more",
+    "host_name": "portal-mainroads.opendata.arcgis.com",
+    "rank": 3,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://catalogue.data.wa.gov.au/dataset/mrwa-culverts/resource/b403f1ad-4918-425a-9add-f421433b11ab",
+    "name": "ArcGIS GeoService - Culverts",
+    "snippet": "This layer indicates the location of culverts managed and controlled by Main Roads Western Australia . A culvert is a drain or pipe that allows water to flow ... Read more",
+    "host_name": "catalogue.data.wa.gov.au",
+    "rank": 4,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://portal-mainroads.opendata.arcgis.com/datasets",
+    "name": "Main Roads Open Data, Maps & Apps",
+    "snippet": "Main Roads Western Australia Open Data, Maps & Apps. ... It includes drainage pipes, open drains, culverts and subsoils etc. Type ... Read more",
+    "host_name": "portal-mainroads.opendata.arcgis.com",
+    "rank": 5,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://www.mainroads.wa.gov.au/technical-commercial/open-data-maps-apps",
+    "name": "Open Data, Maps & Apps",
+    "snippet": "Industry, government and the community can all benefit from access to our extensive range of data , map services and mobile applications. Read more\nIndustry, government and the community can all benefit from access to our extensive range of data, map services and mobile applications. Missing: culvert | Show results with: culvert",
+    "host_name": "www.mainroads.wa.gov.au",
+    "rank": 6,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://portal-mainroads.opendata.arcgis.com/datasets/mainroads::control-of-access/about",
+    "name": "Control of Access | Main Roads Open Data, Maps & Apps",
+    "snippet": "Culverts . Main Roads Western Australia . This layer indicates the location of culverts managed and controlled by Main Roads Western Australia . A culvert is a ... Read more",
+    "host_name": "portal-mainroads.opendata.arcgis.com",
+    "rank": 7,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://catalogue.data.wa.gov.au/dataset/mrwa-culverts/resource/ae415d73-fa49-44d5-8d47-63b298cf3b7c",
+    "name": "Culverts - KML - data.wa.gov.au",
+    "snippet": "This layer indicates the location of culverts managed and controlled by Main Roads Western Australia . A culvert is a drain or pipe that allows water to flow ... Read more\nOpen - This dataset is available for use by everyone ... This layer indicates the location of culverts managed and controlled by Main Roads Western Australia.",
+    "host_name": "catalogue.data.wa.gov.au",
+    "rank": 8,
+    "date": "",
+    "favicon": ""
+  },
+  {
+    "url": "https://portal-mainroads.opendata.arcgis.com/search?collection=dataset&tags=road%2520assets",
+    "name": "Main Roads Open Data, Maps & Apps",
+    "snippet": "This layer shows location of drainage open drains within the Metropolitan Region and is provided for information only. Read more",
+    "host_name": "portal-mainroads.opendata.arcgis.com",
+    "rank": 9,
+    "date": "",
+    "favicon": ""
+  }
+]

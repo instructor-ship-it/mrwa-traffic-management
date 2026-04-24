@@ -1,0 +1,37 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model BannerAlert {
+  id                    String   @id @default(cuid())
+  eqsafeNumber          String   @unique
+  bannerColour          String   // red, amber, grey
+  bannerType            String   // Preliminary Notice, Final Notice
+  dateOfIncident        String
+  timeOfIncident        String?
+  directorateRegion     String?
+  mainRoadsOrContractor String?  // Main Roads, Contractor
+  eqsafeEventType       String?  // Injury/Illness, Procedure Breach, Damage/Loss, etc.
+  actualConsequence     String?  // Moderate, Major
+  potentialConsequence  String?  // Moderate, Major
+  incidentShortDesc     String
+  executiveSummary      String?
+  contributingFactors   String?  // JSON array stored as text
+  correctiveActions     String?  // JSON array stored as text
+  icamInvestigation     Boolean  @default(false)
+  trafficControlRelated Boolean  @default(false)
+  trafficControlNotes   String?
+  criticalRiskProfile   String?
+  incidentCategory      String?  // Vehicle & Driving, Traffic Control, Manual Handling, Equipment & Tools, Slips Trips & Falls, Environmental
+  region                String?  // Extracted region name
+  pdfPath               String?  // relative path to PDF in /public/pdfs/
+  pdfFilename           String?
+  indexedAt             DateTime @default(now())
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
