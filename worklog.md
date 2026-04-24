@@ -37,3 +37,30 @@ Added a complete TGS/MMS Frame Logic section as a second tab in the app.
 ### Results
 - All commits pushed to `origin/main` at `instructor-ship-it/mrwa-traffic-management`
 - Latest commit: `a63e667` — "Add TGS/MMS Frame Logic section to EQSafe Toolkit"
+
+---
+
+## Task: Fix TGS Section Rendering
+**Date:** 2026-04-24
+**Agent:** Main
+
+### Problem
+The TGS/MMS Frames tab was showing "Failed to load TGS data" because the client-side `fetch('/api/tgs')` was failing with `TypeError: Failed to fetch` in the container environment.
+
+### Fix
+- Replaced runtime API fetch with direct static JSON import from `src/data/mms-frame-layouts.json`
+- Removed `useEffect`, `useState` for loading/data states since data is now synchronous
+- Removed unused `Skeleton` import
+- Added `src/data/mms-frame-layouts.json` (copy of public data for direct import)
+
+### Files Modified
+- `src/components/tgs-section.tsx` — Switched from `fetch('/api/tgs')` to `import tgsStaticData from '@/data/mms-frame-layouts.json'`
+
+### Files Created
+- `src/data/mms-frame-layouts.json` — Static data for direct import
+
+### Verification
+- Browser tested: TGS/MMS tab renders correctly with all 6 sub-sections
+- Banner Alerts tab still works correctly
+- Screenshots captured for both tabs
+- Pushed as commit `aa9fbd6`
