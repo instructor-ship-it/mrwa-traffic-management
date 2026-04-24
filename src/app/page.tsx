@@ -2,15 +2,89 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { BannerAlertData, StatsData, FilterState } from '@/lib/types';
+import { TgsData } from '@/lib/types';
+import tgsStaticData from '@/data/mms-frame-layouts.json';
 import { SearchBar } from '@/components/search-bar';
 import { StatsBar } from '@/components/stats-bar';
 import { FilterSidebar } from '@/components/filter-sidebar';
 import { AlertCard } from '@/components/alert-card';
 import { AlertDetail } from '@/components/alert-detail';
+import { AlertPdfs } from '@/components/alert-pdfs';
 import { TgsSection } from '@/components/tgs-section';
-import { Shield, FileWarning, Bell, Signpost } from 'lucide-react';
+import { FrameLayoutCard } from '@/components/frame-layout-card';
+import { SpacingTable } from '@/components/spacing-table';
+import { MmsCodesReference } from '@/components/mms-codes-reference';
+import { CommonMistakes } from '@/components/common-mistakes';
+import { TgsFlowchart } from '@/components/tgs-flowchart';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+} from '@/components/ui/sidebar';
+import { Separator } from '@/components/ui/separator';
+import {
+  Shield,
+  Bell,
+  FileText,
+  Signpost,
+  Gauge,
+  AlertTriangle,
+  Hash,
+  Ruler,
+  GitBranch,
+  FileWarning,
+} from 'lucide-react';
 
-type ActiveSection = 'alerts' | 'tgs';
+type PageId =
+  | 'alerts'
+  | 'pdfs'
+  | 'tgs-overview'
+  | 'tgs-layouts'
+  | 'tgs-spacing'
+  | 'tgs-codes'
+  | 'tgs-mistakes'
+  | 'tgs-flowchart';
+
+interface NavItem {
+  id: PageId;
+  label: string;
+  icon: React.ReactNode;
+  group: 'library' | 'tc-tools' | 'reference';
+}
+
+const NAV_ITEMS: NavItem[] = [
+  { id: 'alerts', label: 'Banner Alerts', icon: <Bell className="h-4 w-4" />, group: 'library' },
+  { id: 'pdfs', label: 'Alert PDFs', icon: <FileText className="h-4 w-4" />, group: 'library' },
+  { id: 'tgs-overview', label: 'TGS/MMS Overview', icon: <Signpost className="h-4 w-4" />, group: 'tc-tools' },
+  { id: 'tgs-layouts', label: 'Frame Layouts', icon: <Gauge className="h-4 w-4" />, group: 'tc-tools' },
+  { id: 'tgs-spacing', label: 'Spacing Table', icon: <Ruler className="h-4 w-4" />, group: 'reference' },
+  { id: 'tgs-codes', label: 'MMS Codes', icon: <Hash className="h-4 w-4" />, group: 'reference' },
+  { id: 'tgs-mistakes', label: 'Common Mistakes', icon: <AlertTriangle className="h-4 w-4" />, group: 'reference' },
+  { id: 'tgs-flowchart', label: 'Logic Flowchart', icon: <GitBranch className="h-4 w-4" />, group: 'tc-tools' },
+];
+
+const GROUP_LABELS: Record<string, string> = {
+  library: 'LIBRARY',
+  'tc-tools': 'TC TOOLS',
+  reference: 'REFERENCE',
+};
+
+// Bottom tab bar items for mobile (just the main 4)
+const MOBILE_TABS: { id: PageId; label: string; icon: React.ReactNode }[] = [
+  { id: 'alerts', label: 'Alerts', icon: <Bell className="h-5 w-5" /> },
+  { id: 'pdfs', label: 'PDFs', icon: <FileText className="h-5 w-5" /> },
+  { id: 'tgs-overview', label: 'TGS/MMS', icon: <Signpost className="h-5 w-5" /> },
+  { id: 'tgs-layouts', label: 'Frames', icon: <Gauge className="h-5 w-5" /> },
+];
 
 const defaultFilters: FilterState = {
   colour: null,
@@ -22,7 +96,7 @@ const defaultFilters: FilterState = {
 };
 
 export default function Home() {
-  const [activeSection, setActiveSection] = useState<ActiveSection>('alerts');
+  const [activePage, setActivePage] = useState<PageId>('alerts');
   const [alerts, setAlerts] = useState<BannerAlertData[]>([]);
   const [stats, setStats] = useState<StatsData | null>(null);
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
@@ -30,6 +104,10 @@ export default function Home() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // TGS data
+  const tgsData = tgsStaticData as unknown as TgsData;
 
   const fetchAlerts = useCallback(async () => {
     setIsLoading(true);
@@ -71,7 +149,6 @@ export default function Home() {
   }, [fetchStats]);
 
   useEffect(() => {
-    // Debounce search
     const timeout = setTimeout(() => {
       fetchAlerts();
     }, filters.search ? 300 : 0);
@@ -91,150 +168,253 @@ export default function Home() {
     filters.tc ? 'tc' : null,
   ].filter(Boolean).length;
 
+  const handlePageChange = (page: PageId) => {
+    setActivePage(page);
+    setMobileMenuOpen(false);
+  };
+
+  // Page title for header
+  const pageTitle = NAV_ITEMS.find(i => i.id === activePage)?.label || 'MRWA Toolkit';
+
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      {/* Header */}
-      <header className="border-b bg-background sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-red-100">
-                <Shield className="h-5 w-5 text-red-600" />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold leading-tight">
-                  MRWA EQSafe Toolkit
-                </h1>
-                <p className="text-xs text-muted-foreground">
-                  Main Roads Western Australia — Traffic Management & Safety
-                </p>
-              </div>
+    <SidebarProvider>
+      {/* Desktop sidebar */}
+      <Sidebar>
+        <SidebarHeader className="p-4 border-b">
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-red-100">
+              <Shield className="h-4 w-4 text-red-600" />
             </div>
-            <div className="flex items-center gap-2">
-              {/* Section tabs */}
-              <div className="flex items-center bg-slate-100 rounded-lg p-0.5">
-                <button
-                  onClick={() => setActiveSection('alerts')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                    activeSection === 'alerts'
-                      ? 'bg-white text-slate-900 shadow-sm'
-                      : 'text-slate-500 hover:text-slate-700'
-                  }`}
-                >
-                  <Bell className="h-3.5 w-3.5" />
-                  Banner Alerts
-                </button>
-                <button
-                  onClick={() => setActiveSection('tgs')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                    activeSection === 'tgs'
-                      ? 'bg-white text-slate-900 shadow-sm'
-                      : 'text-slate-500 hover:text-slate-700'
-                  }`}
-                >
-                  <Signpost className="h-3.5 w-3.5" />
-                  TGS/MMS Frames
-                </button>
-              </div>
-              {/* Only show search in alerts section */}
-              {activeSection === 'alerts' && (
-                <SearchBar
-                  value={filters.search}
-                  onChange={(search) => setFilters((prev) => ({ ...prev, search }))}
-                />
-              )}
+            <div>
+              <h2 className="text-sm font-bold leading-tight">MRWA Toolkit</h2>
+              <p className="text-[10px] text-muted-foreground">Main Roads WA</p>
             </div>
           </div>
-        </div>
-      </header>
+        </SidebarHeader>
+        <SidebarContent>
+          {(['library', 'tc-tools', 'reference'] as const).map((group) => {
+            const items = NAV_ITEMS.filter(i => i.group === group);
+            return (
+              <SidebarGroup key={group}>
+                <SidebarGroupLabel>{GROUP_LABELS[group]}</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {items.map((item) => (
+                      <SidebarMenuItem key={item.id}>
+                        <SidebarMenuButton
+                          isActive={activePage === item.id}
+                          onClick={() => handlePageChange(item.id)}
+                          tooltip={item.label}
+                        >
+                          {item.icon}
+                          <span>{item.label}</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            );
+          })}
+        </SidebarContent>
+      </Sidebar>
 
-      {/* Main Content */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-4">
-        {activeSection === 'alerts' ? (
-          <>
-            {/* Stats */}
-            <div className="mb-4">
-              <StatsBar stats={stats} isLoading={!stats} />
-            </div>
+      {/* Main content area */}
+      <SidebarInset>
+        {/* Top header */}
+        <header className="flex items-center gap-3 px-4 py-3 border-b bg-background sticky top-0 z-40">
+          <SidebarTrigger className="hidden md:flex" />
+          {/* Mobile hamburger */}
+          <button
+            className="md:hidden flex items-center justify-center h-9 w-9 rounded-md hover:bg-muted"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            <Shield className="h-5 w-5 text-red-600" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-sm font-semibold truncate">{pageTitle}</h1>
+          </div>
+          {activePage === 'alerts' && (
+            <SearchBar
+              value={filters.search}
+              onChange={(search) => setFilters((prev) => ({ ...prev, search }))}
+            />
+          )}
+        </header>
 
-            {/* Body with sidebar */}
-            <div className="flex flex-col lg:flex-row gap-4">
-              {/* Sidebar Filters */}
-              <FilterSidebar
-                filters={filters}
-                onFilterChange={setFilters}
-                isOpen={filterOpen}
-                onToggle={() => setFilterOpen(!filterOpen)}
-              />
-
-              {/* Alert Grid */}
-              <div className="flex-1 min-w-0">
-                {/* Results info */}
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-sm text-muted-foreground">
-                    {isLoading ? 'Loading...' : `${alerts.length} alert${alerts.length !== 1 ? 's' : ''} found`}
-                    {activeFilterCount > 0 && (
-                      <span className="text-primary"> · {activeFilterCount} filter{activeFilterCount !== 1 ? 's' : ''} active</span>
-                    )}
+        {/* Mobile slide-down menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-b bg-background px-2 py-2 space-y-4">
+            {(['library', 'tc-tools', 'reference'] as const).map((group) => {
+              const items = NAV_ITEMS.filter(i => i.group === group);
+              return (
+                <div key={group}>
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-1">
+                    {GROUP_LABELS[group]}
                   </p>
-                </div>
-
-                {/* Grid */}
-                {isLoading ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {Array.from({ length: 6 }).map((_, i) => (
-                      <div key={i} className="h-56 rounded-lg border animate-pulse bg-muted" />
+                  <div className="space-y-0.5">
+                    {items.map((item) => (
+                      <button
+                        key={item.id}
+                        onClick={() => handlePageChange(item.id)}
+                        className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-md text-sm transition-colors ${
+                          activePage === item.id
+                            ? 'bg-slate-900 text-white'
+                            : 'text-slate-600 hover:bg-slate-100'
+                        }`}
+                      >
+                        {item.icon}
+                        {item.label}
+                      </button>
                     ))}
                   </div>
-                ) : alerts.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-center">
-                    <FileWarning className="h-12 w-12 text-muted-foreground/50 mb-4" />
-                    <h3 className="text-lg font-medium text-muted-foreground mb-1">
-                      No alerts found
-                    </h3>
-                    <p className="text-sm text-muted-foreground/70 max-w-md">
-                      Try adjusting your search or filters to find what you&apos;re looking for.
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Page content */}
+        <main className="flex-1 px-4 sm:px-6 py-4 pb-20 md:pb-4">
+          {/* BANNER ALERTS PAGE */}
+          {activePage === 'alerts' && (
+            <>
+              <div className="mb-4">
+                <StatsBar stats={stats} isLoading={!stats} />
+              </div>
+              <div className="flex flex-col lg:flex-row gap-4">
+                <FilterSidebar
+                  filters={filters}
+                  onFilterChange={setFilters}
+                  isOpen={filterOpen}
+                  onToggle={() => setFilterOpen(!filterOpen)}
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm text-muted-foreground">
+                      {isLoading ? 'Loading...' : `${alerts.length} alert${alerts.length !== 1 ? 's' : ''} found`}
+                      {activeFilterCount > 0 && (
+                        <span className="text-primary"> · {activeFilterCount} filter{activeFilterCount !== 1 ? 's' : ''} active</span>
+                      )}
                     </p>
                   </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {alerts.map((alert) => (
-                      <AlertCard
-                        key={alert.id}
-                        alert={alert}
-                        onViewDetails={handleViewDetails}
-                      />
-                    ))}
-                  </div>
-                )}
+                  {isLoading ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                      {Array.from({ length: 6 }).map((_, i) => (
+                        <div key={i} className="h-56 rounded-lg border animate-pulse bg-muted" />
+                      ))}
+                    </div>
+                  ) : alerts.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16 text-center">
+                      <FileWarning className="h-12 w-12 text-muted-foreground/50 mb-4" />
+                      <h3 className="text-lg font-medium text-muted-foreground mb-1">No alerts found</h3>
+                      <p className="text-sm text-muted-foreground/70 max-w-md">
+                        Try adjusting your search or filters.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                      {alerts.map((alert) => (
+                        <AlertCard key={alert.id} alert={alert} onViewDetails={handleViewDetails} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ALERT PDFS PAGE */}
+          {activePage === 'pdfs' && (
+            <AlertPdfs alerts={alerts} />
+          )}
+
+          {/* TGS OVERVIEW PAGE */}
+          {activePage === 'tgs-overview' && <TgsSection />}
+
+          {/* TGS FRAME LAYOUTS PAGE */}
+          {activePage === 'tgs-layouts' && (
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold">Frame Layouts</h2>
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                {Object.entries(tgsData.frameLayouts).map(([key, layout]) => (
+                  <FrameLayoutCard key={key} layoutKey={key} layout={layout} />
+                ))}
               </div>
             </div>
-          </>
-        ) : (
-          <TgsSection />
-        )}
-      </main>
+          )}
 
-      {/* Footer */}
-      <footer className="border-t mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
-          <p className="text-xs text-muted-foreground text-center">
-            MRWA EQSafe Toolkit · Main Roads Western Australia ·{' '}
-            {activeSection === 'alerts'
-              ? stats
-                ? `${stats.total} alerts indexed`
-                : 'Loading...'
-              : 'TGS/MMS Frame Logic Reference'}
-          </p>
+          {/* SPACING TABLE PAGE */}
+          {activePage === 'tgs-spacing' && (
+            <SpacingTable
+              values={tgsData.spacingTable.values}
+              source={tgsData.spacingTable.source}
+              conditionalRules={tgsData.conditionalRules}
+            />
+          )}
+
+          {/* MMS CODES PAGE */}
+          {activePage === 'tgs-codes' && (
+            <MmsCodesReference codes={tgsData.mmsCodeReference} />
+          )}
+
+          {/* COMMON MISTAKES PAGE */}
+          {activePage === 'tgs-mistakes' && (
+            <CommonMistakes mistakes={tgsData.commonMistakes} />
+          )}
+
+          {/* LOGIC FLOWCHART PAGE */}
+          {activePage === 'tgs-flowchart' && (
+            <TgsFlowchart />
+          )}
+        </main>
+
+        {/* Mobile bottom tab bar */}
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t shadow-lg">
+          <div className="flex items-center justify-around">
+            {MOBILE_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => handlePageChange(tab.id)}
+                className={`flex flex-col items-center justify-center py-2 px-3 min-w-0 flex-1 transition-colors ${
+                  activePage === tab.id
+                    ? 'text-red-600'
+                    : 'text-slate-400'
+                }`}
+              >
+                {tab.icon}
+                <span className="text-[10px] mt-0.5 font-medium">{tab.label}</span>
+              </button>
+            ))}
+            {/* More button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className={`flex flex-col items-center justify-center py-2 px-3 min-w-0 flex-1 transition-colors ${
+                mobileMenuOpen ? 'text-red-600' : 'text-slate-400'
+              }`}
+            >
+              <AlertTriangle className="h-5 w-5" />
+              <span className="text-[10px] mt-0.5 font-medium">More</span>
+            </button>
+          </div>
         </div>
-      </footer>
 
-      {/* Detail Drawer */}
+        {/* Footer (desktop only) */}
+        <footer className="hidden md:block border-t mt-auto">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
+            <p className="text-xs text-muted-foreground text-center">
+              MRWA EQSafe Toolkit · Main Roads Western Australia
+            </p>
+          </div>
+        </footer>
+      </SidebarInset>
+
+      {/* Alert detail drawer */}
       <AlertDetail
         alert={selectedAlert}
         open={detailOpen}
         onOpenChange={setDetailOpen}
       />
-    </div>
+    </SidebarProvider>
   );
 }
