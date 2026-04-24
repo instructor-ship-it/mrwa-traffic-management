@@ -1,0 +1,19 @@
+# Skills and internal tools
+skills/
+
+# Environment
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Temp files
+download/tmp/
+*.tmp
+*.swp
+
+# OS files
+.DS_Store
+Thumbs.db
