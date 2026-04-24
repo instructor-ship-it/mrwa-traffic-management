@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { TgsData } from '@/lib/types';
+import tgsStaticData from '@/data/mms-frame-layouts.json';
 import { FrameLayoutCard } from '@/components/frame-layout-card';
 import { SpacingTable } from '@/components/spacing-table';
 import { MmsCodesReference } from '@/components/mms-codes-reference';
 import { CommonMistakes } from '@/components/common-mistakes';
 import { TgsFlowchart } from '@/components/tgs-flowchart';
 import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
 import {
   LayoutGrid,
   Hash,
@@ -32,48 +32,8 @@ const SUB_SECTIONS: { key: SubSection; label: string; icon: React.ReactNode }[] 
 ];
 
 export function TgsSection() {
-  const [data, setData] = useState<TgsData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<SubSection>('overview');
-
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const res = await fetch('/api/tgs');
-        if (res.ok) {
-          const json = await res.json();
-          setData(json);
-        }
-      } catch (err) {
-        console.error('Failed to load TGS data:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    loadData();
-  }, []);
-
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-10 w-full" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-24" />
-          ))}
-        </div>
-        <Skeleton className="h-64 w-full" />
-      </div>
-    );
-  }
-
-  if (!data) {
-    return (
-      <div className="text-center py-16 text-muted-foreground">
-        <p>Failed to load TGS data. Please try again.</p>
-      </div>
-    );
-  }
+  const data = tgsStaticData as unknown as TgsData;
 
   const layoutEntries = Object.entries(data.frameLayouts);
   const regCodes = data.mmsCodeReference.filter((c) => c.type === 'regulatory').length;
