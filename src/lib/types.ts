@@ -79,6 +79,117 @@ export const ICAM_STATUSES = [
   { value: 'none', label: 'No ICAM' },
 ] as const;
 
+// TGS/MMS Types
+export interface SpacingValue {
+  postedSpeed_kmh: number;
+  D_m: number;
+  note?: string;
+}
+
+export interface WorksiteSpeedRule {
+  distanceFromLane: string;
+  worksiteSpeed_kmh: number;
+  rfReference: string;
+}
+
+export interface ApproachFrame {
+  id: string;
+  plate1: string;
+  plate2: string | null;
+  plate3: string | null;
+  frameType: 'single' | 'double' | 'triple';
+  hasReverseSide: boolean;
+  mmsCodes: string[];
+  reverseSide?: {
+    plate1: string;
+    plate2: string;
+    plate3: string;
+    mmsCodes: string[];
+  };
+}
+
+export interface FrameLayout {
+  title: string;
+  postedSpeed: string;
+  worksiteSpeed: string;
+  worksiteProximity: string;
+  tmpPage: number;
+  drawingNo: string;
+  approachFrames: ApproachFrame[];
+  spacings: Record<string, string>;
+}
+
+export interface MmsCodeRef {
+  code: string;
+  type: 'regulatory' | 'advisory' | 'termination';
+  description: string;
+}
+
+export interface CommonMistake {
+  mistake: string;
+  correct: string;
+  wrong: string;
+}
+
+export interface ConditionalRule {
+  firstFrameSpacing?: string;
+  aheadSignRequired?: boolean;
+  aheadSignDescription?: string;
+  prepareToStopDistance?: string;
+  reduceSpeedRequired?: boolean;
+  endOfQueueProtectionRequired?: boolean;
+  endOfQueueReference?: string;
+  reduceSpeedNotRequired?: boolean;
+  endOfQueueProtectionNotRequired?: boolean;
+}
+
+export interface TgsData {
+  spacingTable: {
+    source: string;
+    description: string;
+    values: SpacingValue[];
+  };
+  worksiteSpeedRules: WorksiteSpeedRule[];
+  speedFrameTemplate: {
+    description: string;
+    firstSpeedFrame: {
+      plate1: string;
+      plate2: string;
+      plate3: string;
+      mmsCodes: string[];
+    };
+    subsequentSpeedFrame: {
+      plate1: string;
+      plate2: string;
+      plate3: string;
+      mmsCodes: string[];
+    };
+  };
+  trafficControlFrames: {
+    position: string;
+    plate1: string;
+    plate2: string | null;
+    plate3: string | null;
+    frameType: string;
+    mmsCodes: string[];
+  }[];
+  departureTemplate: {
+    description: string;
+    plate1: string;
+    plate2: string;
+    plate3: string;
+    mmsCodes: string[];
+  };
+  conditionalRules: {
+    postedSpeedGte100: ConditionalRule;
+    postedSpeedGte80: ConditionalRule;
+    postedSpeedLt80: ConditionalRule;
+  };
+  frameLayouts: Record<string, FrameLayout>;
+  mmsCodeReference: MmsCodeRef[];
+  commonMistakes: CommonMistake[];
+}
+
 export function getColourClasses(colour: string) {
   switch (colour) {
     case 'red':
