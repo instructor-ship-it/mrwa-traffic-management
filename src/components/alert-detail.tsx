@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { BannerAlertData, getColourClasses } from '@/lib/types';
 import {
   Sheet,
@@ -22,6 +23,11 @@ import {
   ChevronRight,
   User,
   Activity,
+  ArrowLeft,
+  Download,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
 } from 'lucide-react';
 
 interface AlertDetailProps {
@@ -41,15 +47,24 @@ function parseJSON(str: string | null): string[] {
 }
 
 export function AlertDetail({ alert, open, onOpenChange }: AlertDetailProps) {
+  const [showPdf, setShowPdf] = useState(false);
+  const [pdfZoom, setPdfZoom] = useState(100);
+
   if (!alert) return null;
 
   const colours = getColourClasses(alert.bannerColour);
   const contributingFactors = parseJSON(alert.contributingFactors);
   const correctiveActions = parseJSON(alert.correctiveActions);
 
+  // Reset PDF view when alert changes
+  const handleClosePdf = () => {
+    setShowPdf(false);
+    setPdfZoom(100);
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+      <SheetContent className={`overflow-y-auto ${showPdf ? 'sm:max-w-4xl' : 'w-full sm:max-w-lg'}`}>
         <SheetHeader className="space-y-3 pb-4">
           <div className="flex items-center gap-2 flex-wrap">
             <Badge variant="outline" className={`text-xs font-mono ${colours.badge}`}>
@@ -198,24 +213,115 @@ export function AlertDetail({ alert, open, onOpenChange }: AlertDetailProps) {
             </>
           )}
 
-          {/* PDF Link */}
+          {/* PDF Viewer */}
           {alert.pdfPath && (
             <>
               <Separator />
-              <div className="space-y-2">
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => window.open(alert.pdfPath!, '_blank')}
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Open Full PDF Report
-                  <ExternalLink className="h-3.5 w-3.5 ml-2" />
-                </Button>
-                <p className="text-xs text-muted-foreground text-center">
-                  {alert.pdfFilename}
-                </p>
-              </div>
+              {showPdf ? (
+                <div className="space-y-3">
+                  {/* PDF toolbar */}
+                  <div className="flex items-center justify-between">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleClosePdf}
+                      className="h-8"
+                    >
+                      <ArrowLeft className="h-4 w-4 mr-1" />
+                      Back to Details
+                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 w-7 p-0"
+                        onClick={() => setPdfZoom(Math.max(50, pdfZoom - 25))}
+                      >
+                        <ZoomOut className="h-3.5 w-3.5" />
+                      </Button>
+                      <span className="text-xs text-muted-foreground w-12 text-center">
+                        {pdfZoom}%
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 w-7 p-0"
+                        onClick={() => setPdfZoom(Math.min(200, pdfZoom + 25))}
+                      >
+                        <ZoomIn className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 w-7 p-0 ml-1"
+                        onClick={() => setPdfZoom(100)}
+                        title="Reset zoom"
+                      >
+                        <Maximize2 className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 ml-1 text-xs gap-1"
+                        onClick={() => window.open(alert.pdfPath!, '_blank')}
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        Open in New Tab
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* PDF iframe */}
+                  <div className="rounded-lg border overflow-hidden bg-slate-100" style={{ height: '70vh' }}>
+                    <iframe
+                      src={alert.pdfPath}
+                      title={`PDF: ${alert.incidentShortDesc}`}
+                      className="w-full h-full border-0"
+                      style={{ transform: `scale(${pdfZoom / 100})`, transformOrigin: 'top left', width: `${10000 / pdfZoom}%`, height: `${10000 / pdfZoom}%` }}
+                    />
+                  </div>
+
+                  <p className="text-xs text-muted-foreground text-center">
+                    {alert.pdfFilename}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Button
+                    className="w-full"
+                    onClick={() => setShowPdf(true)}
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    View PDF Report
+                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => window.open(alert.pdfPath!, '_blank')}
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Open in New Tab
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => {
+                        const a = document.createElement('a');
+                        a.href = alert.pdfPath!;
+                        a.download = alert.pdfFilename || 'alert.pdf';
+                        a.click();
+                      }}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground text-center">
+                    {alert.pdfFilename}
+                  </p>
+                </div>
+              )}
             </>
           )}
         </div>
