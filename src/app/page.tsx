@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { BannerAlertData, StatsData, FilterState } from '@/lib/types';
 import { TgsData } from '@/lib/types';
 import tgsStaticData from '@/data/mms-frame-layouts.json';
+import alertsData from '@/data/alerts.json';
 import { SearchBar } from '@/components/search-bar';
 import { StatsBar } from '@/components/stats-bar';
 import { FilterSidebar } from '@/components/filter-sidebar';
@@ -30,7 +31,6 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
-import { Separator } from '@/components/ui/separator';
 import {
   Shield,
   Bell,
@@ -78,7 +78,7 @@ const GROUP_LABELS: Record<string, string> = {
   reference: 'REFERENCE',
 };
 
-// Bottom tab bar items for mobile (just the main 4)
+// Bottom tab bar items for mobile
 const MOBILE_TABS: { id: PageId; label: string; icon: React.ReactNode }[] = [
   { id: 'alerts', label: 'Alerts', icon: <Bell className="h-5 w-5" /> },
   { id: 'pdfs', label: 'PDFs', icon: <FileText className="h-5 w-5" /> },
@@ -95,65 +95,86 @@ const defaultFilters: FilterState = {
   search: '',
 };
 
+// Compute stats from static data
+function computeStats(data: BannerAlertData[]): StatsData {
+  const red = data.filter(a => a.bannerColour === 'red').length;
+  const amber = data.filter(a => a.bannerColour === 'amber').length;
+  const grey = data.filter(a => a.bannerColour === 'grey').length;
+  const tcRelated = data.filter(a => a.trafficControlRelated).length;
+  const icamActive = data.filter(a => a.icamInvestigation && a.bannerType === 'Preliminary Notice').length;
+  const icamComplete = data.filter(a => a.icamInvestigation && a.bannerType === 'Final Notice').length;
+  const noIcam = data.filter(a => !a.icamInvestigation).length;
+
+  const categoryMap = new Map<string, number>();
+  data.forEach(a => {
+    const cat = a.incidentCategory || 'Unknown';
+    categoryMap.set(cat, (categoryMap.get(cat) || 0) + 1);
+  });
+
+  const regionMap = new Map<string, number>();
+  data.forEach(a => {
+    const reg = a.region || 'Unknown';
+    regionMap.set(reg, (regionMap.get(reg) || 0) + 1);
+  });
+
+  return {
+    total: data.length,
+    red,
+    amber,
+    grey,
+    tcRelated,
+    icamActive,
+    icamComplete,
+    noIcam,
+    categoryBreakdown: Array.from(categoryMap.entries()).map(([category, count]) => ({ category, count })),
+    regionBreakdown: Array.from(regionMap.entries()).map(([region, count]) => ({ region, count })),
+  };
+}
+
+// Client-side filtering
+function filterAlerts(data: BannerAlertData[], filters: FilterState): BannerAlertData[] {
+  return data.filter(alert => {
+    if (filters.colour && alert.bannerColour !== filters.colour) return false;
+    if (filters.category && alert.incidentCategory !== filters.category) return false;
+    if (filters.region && alert.region !== filters.region) return false;
+    if (filters.tc && !alert.trafficControlRelated) return false;
+
+    if (filters.icam) {
+      if (filters.icam === 'active' && !(alert.icamInvestigation && alert.bannerType === 'Preliminary Notice')) return false;
+      if (filters.icam === 'complete' && !(alert.icamInvestigation && alert.bannerType === 'Final Notice')) return false;
+      if (filters.icam === 'none' && alert.icamInvestigation) return false;
+    }
+
+    if (filters.search) {
+      const q = filters.search.toLowerCase();
+      const haystack = [
+        alert.incidentShortDesc,
+        alert.executiveSummary,
+        alert.eqsafeNumber,
+        alert.directorateRegion,
+        alert.incidentCategory,
+        alert.eqsafeEventType,
+      ].filter(Boolean).join(' ').toLowerCase();
+      if (!haystack.includes(q)) return false;
+    }
+
+    return true;
+  });
+}
+
 export default function Home() {
   const [activePage, setActivePage] = useState<PageId>('alerts');
-  const [alerts, setAlerts] = useState<BannerAlertData[]>([]);
-  const [stats, setStats] = useState<StatsData | null>(null);
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [selectedAlert, setSelectedAlert] = useState<BannerAlertData | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // TGS data
+  // Static data
+  const allAlerts = alertsData as unknown as BannerAlertData[];
   const tgsData = tgsStaticData as unknown as TgsData;
-
-  const fetchAlerts = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (filters.colour) params.set('colour', filters.colour);
-      if (filters.category) params.set('category', filters.category);
-      if (filters.region) params.set('region', filters.region);
-      if (filters.icam) params.set('icam', filters.icam);
-      if (filters.tc) params.set('tc', 'true');
-      if (filters.search) params.set('search', filters.search);
-
-      const res = await fetch(`/api/alerts?${params.toString()}`);
-      if (res.ok) {
-        const data = await res.json();
-        setAlerts(data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch alerts:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [filters]);
-
-  const fetchStats = useCallback(async () => {
-    try {
-      const res = await fetch('/api/stats');
-      if (res.ok) {
-        const data = await res.json();
-        setStats(data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch stats:', err);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
-
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      fetchAlerts();
-    }, filters.search ? 300 : 0);
-    return () => clearTimeout(timeout);
-  }, [filters, fetchAlerts]);
+  const stats = useMemo(() => computeStats(allAlerts), [allAlerts]);
+  const filteredAlerts = useMemo(() => filterAlerts(allAlerts, filters), [allAlerts, filters]);
 
   const handleViewDetails = (alert: BannerAlertData) => {
     setSelectedAlert(alert);
@@ -173,7 +194,6 @@ export default function Home() {
     setMobileMenuOpen(false);
   };
 
-  // Page title for header
   const pageTitle = NAV_ITEMS.find(i => i.id === activePage)?.label || 'MRWA Toolkit';
 
   return (
@@ -280,7 +300,7 @@ export default function Home() {
           {activePage === 'alerts' && (
             <>
               <div className="mb-4">
-                <StatsBar stats={stats} isLoading={!stats} />
+                <StatsBar stats={stats} isLoading={false} />
               </div>
               <div className="flex flex-col lg:flex-row gap-4">
                 <FilterSidebar
@@ -292,19 +312,13 @@ export default function Home() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-sm text-muted-foreground">
-                      {isLoading ? 'Loading...' : `${alerts.length} alert${alerts.length !== 1 ? 's' : ''} found`}
+                      {filteredAlerts.length} alert{filteredAlerts.length !== 1 ? 's' : ''} found
                       {activeFilterCount > 0 && (
                         <span className="text-primary"> · {activeFilterCount} filter{activeFilterCount !== 1 ? 's' : ''} active</span>
                       )}
                     </p>
                   </div>
-                  {isLoading ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                      {Array.from({ length: 6 }).map((_, i) => (
-                        <div key={i} className="h-56 rounded-lg border animate-pulse bg-muted" />
-                      ))}
-                    </div>
-                  ) : alerts.length === 0 ? (
+                  {filteredAlerts.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-16 text-center">
                       <FileWarning className="h-12 w-12 text-muted-foreground/50 mb-4" />
                       <h3 className="text-lg font-medium text-muted-foreground mb-1">No alerts found</h3>
@@ -314,7 +328,7 @@ export default function Home() {
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                      {alerts.map((alert) => (
+                      {filteredAlerts.map((alert) => (
                         <AlertCard key={alert.id} alert={alert} onViewDetails={handleViewDetails} />
                       ))}
                     </div>
@@ -326,7 +340,7 @@ export default function Home() {
 
           {/* ALERT PDFS PAGE */}
           {activePage === 'pdfs' && (
-            <AlertPdfs alerts={alerts} />
+            <AlertPdfs alerts={allAlerts} />
           )}
 
           {/* TGS OVERVIEW PAGE */}
